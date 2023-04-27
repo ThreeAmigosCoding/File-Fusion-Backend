@@ -3,6 +3,7 @@ package main
 //chage package and see what to do with them
 
 import (
+	"file-fusion-backend/shared"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -42,8 +43,8 @@ func main() {
 		sess, err := session.NewSession(&aws.Config{
 			Region: aws.String("eu-central-1"),
 			Credentials: credentials.NewStaticCredentials(
-				"AKIASBHDTYUR4S2GW65S",
-				"a70sry8MnDYJB47drd0/OUaqTwfD0B9QQeSvTwcf",
+				shared.AccessKey,
+				shared.SecretAccessKey,
 				"", // leave it empty if you don't have one
 			),
 		})
