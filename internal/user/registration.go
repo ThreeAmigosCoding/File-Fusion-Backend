@@ -34,8 +34,8 @@ func main() {
 		sess, err := session.NewSession(&aws.Config{
 			Region: aws.String("eu-central-1"),
 			Credentials: credentials.NewStaticCredentials(
-				"AKIASBHDTYUR3QIMSNY7",
-				"f0Ub63ziRlfMKykcKPy5b3Hw75NGVcLGmTMAmtnJ",
+				"",
+				"",
 				"", // leave it empty if you don't have one
 			),
 		})
