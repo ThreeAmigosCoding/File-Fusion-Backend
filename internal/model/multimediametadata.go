@@ -12,8 +12,8 @@ type MultimediaMetadata struct {
 	Username    string    `json:"username"`
 }
 
-func NewMultimediaMetadata(id string, name string, Type string, sizeInKB float32, createdAt time.Time, lastChanged time.Time,
-	username string) *MultimediaMetadata {
+func NewMultimediaMetadata(id string, name string, Type string, sizeInKB float32,
+	createdAt time.Time, lastChanged time.Time, username string) *MultimediaMetadata {
 	return &MultimediaMetadata{
 		Id:          id,
 		Name:        name,
