@@ -16,7 +16,7 @@ func main() {
 		Credentials: credentials.NewStaticCredentials(
 			shared.AccessKey,
 			shared.SecretAccessKey,
-			"", // leave it empty if you don't have one
+			"",
 		),
 	})
 	if err != nil {

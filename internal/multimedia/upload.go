@@ -19,7 +19,7 @@ func UploadFile(context *gin.Context, session *session.Session) {
 
 	file, err := context.FormFile("file")
 	if err != nil {
-		context.AbortWithError(http.StatusBadRequest, err)
+		context.JSON(http.StatusBadRequest, err)
 		return
 	}
 	extension := filepath.Ext(file.Filename)
@@ -49,7 +49,7 @@ func UploadFile(context *gin.Context, session *session.Session) {
 	//region S3 Bucket
 	fileData, err := file.Open()
 	if err != nil {
-		context.AbortWithError(http.StatusInternalServerError, err)
+		context.JSON(http.StatusInternalServerError, err)
 		return
 	}
 	defer func(fileData multipart.File) {
@@ -68,7 +68,7 @@ func UploadFile(context *gin.Context, session *session.Session) {
 		Key:    aws.String(username + "/" + file.Filename),
 	})
 	if err != nil {
-		context.AbortWithError(http.StatusInternalServerError, err)
+		context.JSON(http.StatusInternalServerError, err)
 		return
 	}
 	//endregion
