@@ -186,3 +186,5 @@ fabric.properties
 
 # credentials
 shared/secrets.py
+
+.serverless

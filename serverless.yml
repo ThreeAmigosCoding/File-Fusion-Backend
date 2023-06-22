@@ -1,0 +1,110 @@
+service: File-Fusion-Backend
+
+provider:
+  name: aws
+  runtime: python3.10
+  stage: dev
+  region: eu-central-1
+  memorySize: 128
+  timeout: 15
+  environment:
+    USERS_TABLE:
+      Ref: user
+    MULTIMEDIA_METADATA_TABLE:
+      Ref: multimediaMetadata
+    MULTIMEDIA_BUCKET:
+      Ref: multimediaCloudStorage
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        "Fn::GetAtt": [user, Arn]
+
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        "Fn::GetAtt": [multimediaMetadata, Arn]
+
+    - Effect: Allow
+      Action:
+        - s3:GetObject
+        - s3:PutObject
+        - s3:ListBucket
+        - s3:DeleteObject
+      Resource:
+        "Fn::GetAtt": [multimediaCloudStorage, Arn]
+
+
+package:
+  individually: true
+
+functions:
+  uploadFile:
+    handler: internal/multimedia/upload.upload_file
+    events:
+      - http:
+          path: upload-file/:username
+          method: post
+  registration:
+    handler: internal/user/registration.registration
+    events:
+      - http:
+          path: register
+          method: post
+
+resources:
+  Resources:
+    multimediaMetadata:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: multimedia_metadata
+        # Table Schema: attributes (name and type)
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        # Key Schema: which attribute is used as primary key (name and type)
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        # Additional configuration for simultaneous reads and writes
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+
+    user:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: user
+        # Table Schema: attributes (name and type)
+        AttributeDefinitions:
+          - AttributeName: username
+            AttributeType: S
+        # Key Schema: which attribute is used as primary key (name and type)
+        KeySchema:
+          - AttributeName: username
+            KeyType: HASH
+        # Additional configuration for simultaneous reads and writes
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+    multimediaCloudStorage:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: multimedia-cloud-storage
