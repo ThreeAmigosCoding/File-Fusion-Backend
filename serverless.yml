@@ -68,12 +68,6 @@ functions:
               - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
               - UserPoolId:
                   Ref: CognitoUserPool
-  registration:
-    handler: internal/user/registration.registration
-    events:
-      - http:
-          path: register
-          method: post
   helloWorld:
     handler: internal/user/hello_world.hello_world
     events:
@@ -159,7 +153,7 @@ resources:
           Ref: CognitoUserPool
         GenerateSecret: false
         CallbackURLs:
-          - http://localhost:4200/home
+          - http://localhost:4200/
         LogoutURLs:
           - http://localhost:4200/
         SupportedIdentityProviders:
