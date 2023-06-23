@@ -60,12 +60,35 @@ functions:
       - http:
           path: upload-file/:username
           method: post
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
   registration:
     handler: internal/user/registration.registration
     events:
       - http:
           path: register
           method: post
+  helloWorld:
+    handler: internal/user/hello_world.hello_world
+    events:
+      - http:
+          path: helloWorld
+          method: get
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+
 
 resources:
   Resources:
@@ -85,8 +108,6 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-
-
     user:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -108,3 +129,60 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: multimedia-cloud-storage
+
+    CognitoUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: my-user-pool
+        UsernameAttributes:
+          - email
+        AutoVerifiedAttributes:
+          - email
+        Schema:
+          - Name: name
+            AttributeDataType: String
+            Mutable: true
+            Required: true
+          - Name: family_name
+            AttributeDataType: String
+            Mutable: true
+            Required: true
+          - Name: address
+            AttributeDataType: String
+            Mutable: true
+            Required: true
+
+    CognitoPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        UserPoolId:
+          Ref: CognitoUserPool
+        GenerateSecret: false
+        CallbackURLs:
+          - http://localhost:4200/home
+        LogoutURLs:
+          - http://localhost:4200/
+        SupportedIdentityProviders:
+          - COGNITO
+        AllowedOAuthFlows:
+          - implicit
+        AllowedOAuthScopes:
+          - aws.cognito.signin.user.admin
+        AllowedOAuthFlowsUserPoolClient: true
+        ReadAttributes:
+          - email
+          - name
+          - family_name
+          - address
+        WriteAttributes:
+          - email
+          - name
+          - family_name
+          - address
+
+    CognitoUserPoolDomain:
+      Type: AWS::Cognito::UserPoolDomain
+      Properties:
+        UserPoolId:
+          Ref: CognitoUserPool
+        Domain: cuki-kanjos-djoka
