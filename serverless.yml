@@ -167,6 +167,8 @@ resources:
         AllowedOAuthFlows:
           - implicit
         AllowedOAuthScopes:
+          - openid
+          - profile
           - aws.cognito.signin.user.admin
         AllowedOAuthFlowsUserPoolClient: true
         ReadAttributes:
