@@ -74,6 +74,15 @@ functions:
       - http:
           path: helloWorld
           method: get
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
           authorizer:
             name: MyAuthorizer
             type: COGNITO_USER_POOLS
