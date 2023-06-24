@@ -188,3 +188,5 @@ fabric.properties
 shared/secrets.py
 
 .serverless
+
+node_modules
