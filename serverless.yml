@@ -49,17 +49,34 @@ provider:
       Resource:
         "Fn::GetAtt": [multimediaCloudStorage, Arn]
 
-
 package:
   individually: true
+  patterns:
+    - '!**/**'
+    - 'internal/model/**'
 
 functions:
   uploadFile:
     handler: internal/multimedia/upload.upload_file
+    package:
+      include: 'internal/multimedia/**'
     events:
       - http:
-          path: upload-file/:username
+          path: uploadFile/{username}
+          request:
+            parameters:
+              paths:
+                username: true
           method: post
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
           authorizer:
             name: MyAuthorizer
             type: COGNITO_USER_POOLS
@@ -70,6 +87,8 @@ functions:
                   Ref: CognitoUserPool
   helloWorld:
     handler: internal/user/hello_world.hello_world
+    package:
+      include: 'internal/user/**'
     events:
       - http:
           path: helloWorld

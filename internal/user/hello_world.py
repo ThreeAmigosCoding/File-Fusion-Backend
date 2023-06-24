@@ -1,4 +1,6 @@
 import json
+from botocore.exceptions import ClientError
+import boto3
 
 
 def hello_world(event, context):
