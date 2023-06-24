@@ -14,6 +14,9 @@ provider:
       Ref: multimediaMetadata
     MULTIMEDIA_BUCKET:
       Ref: multimediaCloudStorage
+#  apiGateway:
+#    binaryMediaTypes:
+#      - '*/*'
 
   iamRoleStatements:
     - Effect: Allow
@@ -42,12 +45,20 @@ provider:
 
     - Effect: Allow
       Action:
+        - s3:ListBucket
+      Resource:
+        "Fn::GetAtt": [ multimediaCloudStorage, Arn ]
+    - Effect: Allow
+      Action:
         - s3:GetObject
         - s3:PutObject
-        - s3:ListBucket
         - s3:DeleteObject
       Resource:
-        "Fn::GetAtt": [multimediaCloudStorage, Arn]
+        - "Fn::Join":
+            - ""
+            - - "Fn::GetAtt": [ multimediaCloudStorage, Arn ]
+              - "/*"
+
 
 package:
   individually: true
@@ -210,3 +221,10 @@ resources:
         UserPoolId:
           Ref: CognitoUserPool
         Domain: cuki-kanjos-djoka
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    filename: requirements.txt
