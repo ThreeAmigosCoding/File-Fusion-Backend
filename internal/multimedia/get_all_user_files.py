@@ -20,7 +20,7 @@ def get_all_user_files(event, context):
     username = event['pathParameters']['username']
 
     items = table.scan(
-        FilterExpression=Attr('username').eq(username)
+        FilterExpression=Attr('username').eq(username) & Attr('deleted').ne(True)
     )
     user_files_metadata = items['Items']
 
