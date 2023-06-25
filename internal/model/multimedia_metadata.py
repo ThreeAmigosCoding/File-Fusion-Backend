@@ -31,3 +31,14 @@ class MultimediaMetadata:
             "username": self.username,
             "description": self.description
         }
+
+
+class MultimediaDisplay(MultimediaMetadata):
+    def __init__(self, id, name, type, size_in_kb, created_at, last_changed, username, description, data_url=""):
+        super().__init__(id, name, type, size_in_kb, created_at, last_changed, username, description)
+        self.data_url = data_url
+
+    def to_dict(self):
+        multimedia_output = super().to_dict()
+        multimedia_output["data_url"] = self.data_url
+        return multimedia_output

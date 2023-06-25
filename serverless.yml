@@ -70,7 +70,7 @@ functions:
   uploadFile:
     handler: internal/multimedia/upload.upload_file
     package:
-      include: 'internal/multimedia/**'
+      include: 'internal/multimedia/upload.py'
     events:
       - http:
           path: uploadFile/{username}
@@ -121,6 +121,35 @@ functions:
               - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
               - UserPoolId:
                   Ref: CognitoUserPool
+  getAllUserFiles:
+    handler: internal/multimedia/get_all_user_files.get_all_user_files
+    package:
+      include: 'internal/multimedia/get_all_user_files.py'
+    events:
+      - http:
+          path: getAllUserFiles/{username}
+          request:
+            parameters:
+              paths:
+                username: true
+          method: get
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
 
 
 resources:
@@ -129,18 +158,16 @@ resources:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: multimedia_metadata
-        # Table Schema: attributes (name and type)
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
-        # Key Schema: which attribute is used as primary key (name and type)
         KeySchema:
           - AttributeName: id
             KeyType: HASH
-        # Additional configuration for simultaneous reads and writes
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+
     user:
       Type: AWS::DynamoDB::Table
       Properties:
