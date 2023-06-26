@@ -56,6 +56,13 @@ def update_file(event, context):
 
         # If there is no new file to be updated
         if old_file_name == file_name and base64_string == "":
+            message = f'Update has occurred on {file_name} in {multimedia_metadata_table_name}.'
+            sns = boto3.client('sns')
+            response = sns.publish(
+                TopicArn=f'arn:aws:sns:eu-central-1:140063786275:{username}-notifications',
+                Message=message,
+                Subject='Update Notification'
+            )
             return my_response(200, {"message": "File updated successfully"})
 
         if old_file_name != file_name and base64_string == "":

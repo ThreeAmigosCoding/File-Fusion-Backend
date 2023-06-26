@@ -472,6 +472,14 @@ functions:
               - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
               - UserPoolId:
                   Ref: CognitoUserPool
+  createSnsTopicAndSubscribe:
+    handler: internal/notifications/create_topic_on_registration.create_topic_on_registration
+    package:
+      include: 'internal/notifications/create_topic_on_registration.py'
+    events:
+      - cognitoUserPool:
+          pool: my-user-pool
+          trigger: PreSignUp
 
 resources:
   Resources:
