@@ -18,6 +18,9 @@ provider:
       Ref: albums
     ALBUM_CONTENT_TABLE:
       Ref: albumContent
+  apiGateway:
+    binaryMediaTypes:
+      - '*/*'
 
 
   iamRoleStatements:
@@ -275,6 +278,64 @@ functions:
               paths:
                 email: true
           method: get
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  getSubAlbums:
+    handler: internal/albums/get_sub_albums.get_sub_albums
+    package:
+      include: 'internal/albums/get_sub_albums.py'
+    events:
+      - http:
+          path: getSubAlbums/{parentId}
+          request:
+            parameters:
+              paths:
+                parentId: true
+          method: get
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  deleteAlbum:
+    handler: internal/albums/delete_album.delete_album
+    package:
+      include: 'internal/albums/delete_album.py'
+    events:
+      - http:
+          path: deleteAlbum/{albumId}
+          request:
+            parameters:
+              paths:
+                albumId: true
+          method: delete
           cors:
             origin: 'http://localhost:4200'
             headers:

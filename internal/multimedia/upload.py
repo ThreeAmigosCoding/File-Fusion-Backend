@@ -19,6 +19,8 @@ def upload_file(event, context):
 
         username = event['pathParameters']['username']
 
+        print("body", event['body'])
+
         event['body'] = base64.b64decode(event['body'])
 
         print(event['body'])

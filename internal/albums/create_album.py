@@ -33,7 +33,7 @@ def create_album(event, context):
             return my_response(400, {"message": "Invalid owner"})
 
         response = table.scan(
-            FilterExpression=Attr('owner').eq(owner) & Attr('name').eq(name)
+            FilterExpression=Attr('owner').eq(owner) & Attr('name').eq(name) & Attr('deleted').eq(False)
         )
         existing_albums = response['Items']
 

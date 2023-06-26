@@ -13,16 +13,16 @@ dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table(albums_table_name)
 
 
-def get_all_user_albums(event, context):
+def get_sub_albums(event, context):
     try:
-        email = event['pathParameters']['email']
-
+        parent_id = event['pathParameters']['parentId']
+        print("parent_id", parent_id)
         items = table.scan(
-            FilterExpression=Attr('owner').eq(email) & Attr('parent').eq("") & Attr('deleted').eq(False)
+            FilterExpression=Attr('parent').eq(parent_id) & Attr('deleted').eq(False)
         )
         albums_data = items['Items']
         albums = []
-
+        print("items", items)
         for item in albums_data:
             album = Album(
                 id=item['id'],
