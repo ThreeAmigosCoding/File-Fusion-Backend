@@ -33,7 +33,7 @@ def update_file(event, context):
 
         body = json.loads(event['body'])
         base64_string = body['file']
-        file_name = body['name']
+        file_name = metadata_id + ";" + body['name']
         size_in_kb = Decimal(body['size'])
         description = body['description']
         username = body['username']

@@ -41,6 +41,8 @@ def upload_file(event, context):
 
         multimedia_id = str(uuid.uuid4())
 
+        file_name = multimedia_id + ";" + file_name
+
         # Create a MultimediaMetadata object
         multimedia = MultimediaMetadata(
             id=multimedia_id,
