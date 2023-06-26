@@ -37,7 +37,12 @@ def get_album_content(event, context):
             item = multimedia_metadata_table_name.scan(
                 FilterExpression=Attr('id').eq(album_content['file']) & Attr('deleted').ne(True)
             )
+
+            if not item['Items']:
+                continue
+
             multimedia_item = item['Items'][0]
+
             print("multimedia_item:", multimedia_item)
             data_url = s3.generate_presigned_url('get_object',
                                                  Params={'Bucket': multimedia_bucket_name,

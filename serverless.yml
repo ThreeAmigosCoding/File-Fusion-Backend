@@ -383,7 +383,36 @@ functions:
               - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
               - UserPoolId:
                   Ref: CognitoUserPool
-
+  removeContent:
+    handler: internal/albums/remove_content.remove_content
+    package:
+      include: 'internal/albums/remove_content.py'
+    events:
+      - http:
+          path: removeContent/{albumId}/{fileId}
+          request:
+            parameters:
+              paths:
+                albumId: true
+                fileId: true
+          method: delete
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
 
 resources:
   Resources:
