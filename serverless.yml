@@ -88,6 +88,15 @@ provider:
             - - "Fn::GetAtt": [ multimediaCloudStorage, Arn ]
               - "/*"
 
+    - Effect: 'Allow'
+      Action:
+        - 'SNS:CreateTopic'
+        - 'SNS:DeleteTopic'
+        - 'SNS:Subscribe'
+        - 'SNS:Unsubscribe'
+        - 'SNS:Publish'
+      Resource: '*'
+
 
 package:
   individually: true
@@ -419,10 +428,11 @@ functions:
       include: 'internal/albums/get_available_albums.py'
     events:
       - http:
-          path: getAvailableAlbums/{fileId}
+          path: getAvailableAlbums/{email}/{fileId}
           request:
             parameters:
               paths:
+                email: true
                 fileId: true
           method: get
           cors:
@@ -480,6 +490,20 @@ functions:
       - cognitoUserPool:
           pool: my-user-pool
           trigger: PreSignUp
+          existing: true
+  sendS3Notification:
+    handler: internal/notifications/notification_sender.send_notification
+    package:
+      include: 'internal/notifications/notification_sender.py'
+    events:
+      - s3:
+          bucket: multimedia-cloud-storage
+          event: s3:ObjectCreated:*
+          existing: true
+      - s3:
+          bucket: multimedia-cloud-storage
+          event: s3:ObjectRemoved:*
+          existing: true
 
 resources:
   Resources:
@@ -605,6 +629,7 @@ resources:
         UserPoolId:
           Ref: CognitoUserPool
         Domain: cuki-kanjos-djoka
+
 
 plugins:
   - serverless-python-requirements

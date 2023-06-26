@@ -17,6 +17,7 @@ album_content_table = dynamodb.Table(album_content_table_name)
 
 def get_available_albums(event, context):
     try:
+        email = event['pathParameters']['email']
         file_id = event['pathParameters']['fileId']
 
         # Get all albums which include the file
@@ -30,7 +31,7 @@ def get_available_albums(event, context):
 
         # Get all albums
         response = albums_table.scan(
-            FilterExpression=Attr('deleted').eq(False)
+            FilterExpression=Attr('deleted').eq(False) & Attr('owner').eq(email)
         )
 
         not_included_albums = []

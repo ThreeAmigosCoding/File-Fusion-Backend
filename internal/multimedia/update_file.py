@@ -39,6 +39,8 @@ def update_file(event, context):
         username = body['username']
         file_extension = body['extension']
 
+        sanitized_username = username.replace('@', '').replace('.', '')
+
         # Create a MultimediaMetadata object
         multimedia = MultimediaMetadata(
             id=metadata_id,
@@ -59,7 +61,7 @@ def update_file(event, context):
             message = f'Update has occurred on {file_name} in {multimedia_metadata_table_name}.'
             sns = boto3.client('sns')
             response = sns.publish(
-                TopicArn=f'arn:aws:sns:eu-central-1:140063786275:{username}-notifications',
+                TopicArn=f'arn:aws:sns:eu-central-1:140063786275:{sanitized_username}-notifications',
                 Message=message,
                 Subject='Update Notification'
             )
