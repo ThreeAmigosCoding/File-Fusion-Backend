@@ -1,55 +1,84 @@
-import boto3
-import json
 import base64
-from botocore.exceptions import ClientError
+import json
+import os
+import traceback
+from decimal import Decimal
+
+import boto3
+import uuid
+from datetime import datetime
 
 from internal.model.multimedia_metadata import MultimediaMetadata
+from internal.model.my_response import my_response
+
+album_content_table_name = os.environ['ALBUM_CONTENT_TABLE']
 
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table('multimedia_metadata')
 
+album_content_table = dynamodb.Table(album_content_table_name)
+
 
 def upload_file(event, context):
     try:
-        data = event['body']
-        multimedia = MultimediaMetadata(**data)
 
-        try:
-            table.put_item(Item=multimedia.dict())
-        except ClientError as e:
-            return {
-                'statusCode': 500,
-                'body': json.dumps(str(e))
-            }
+        username = event['pathParameters']['username']
 
-        # region S3 Bucket
+        print("body", event['body'])
+
+        event['body'] = base64.b64decode(event['body'])
+
+        print(event['body'])
+
+        body = json.loads(event['body'])
+        base64_string = body['file']
+        file_name = body['name']
+        size_in_kb = Decimal(body['size'])  # size in KB
+        file_extension = body['extension']
+        album_id = body['albumId']
+
+        file_content = base64.b64decode(base64_string)
+
+        multimedia_id = str(uuid.uuid4())
+
+        file_name = multimedia_id + ";" + file_name
+
+        # Create a MultimediaMetadata object
+        multimedia = MultimediaMetadata(
+            id=multimedia_id,
+            name=file_name,
+            type=file_extension,
+            size_in_kb=size_in_kb,
+            created_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            last_changed=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            username=username,
+            description=''
+        )
+
+        # Write the metadata to the DynamoDB table
+        table.put_item(Item=multimedia.to_dict())
+
+        if album_id != "":
+            add_to_album(multimedia_id, album_id)
+
+        # Upload the file to the S3 bucket
         s3 = boto3.client('s3')
+        s3.put_object(
+            Body=file_content,
+            Bucket='multimedia-cloud-storage',  # replace with your bucket name
+            Key=f'{username}/{file_name}'
+        )
 
-        try:
-            # Convert the base64 encoded data to bytes
-            file_data = base64.b64decode(data['file_data'])
-
-            # Upload the file to S3
-            s3.put_object(
-                Body=file_data,
-                Bucket='multimedia-cloud-storage',  # replace with your bucket name
-                Key=multimedia.username + '/' + multimedia.name
-            )
-        except ClientError as e:
-            return {
-                'statusCode': 500,
-                'body': json.dumps(str(e))
-            }
-        # endregion
-
-        return {
-            'statusCode': 200,
-            'body': json.dumps({
-                'message': 'File uploaded successfully'
-            })
-        }
+        return my_response(200, {"message": "File uploaded successfully"})
     except Exception as e:
-        return {
-            'statusCode': 500,
-            'body': json.dumps(str(e))
-        }
+        print("message", str(e))
+        print("traceback", traceback.format_exc())
+        return my_response(500, {"message": str(e), "tracebck": traceback.format_exc()})
+
+
+def add_to_album(multimedia_id, album_id):
+    album_content_table.put_item(Item={
+        "id": str(uuid.uuid4()),
+        "album": album_id,
+        "file": multimedia_id
+    })

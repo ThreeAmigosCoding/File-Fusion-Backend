@@ -14,6 +14,14 @@ provider:
       Ref: multimediaMetadata
     MULTIMEDIA_BUCKET:
       Ref: multimediaCloudStorage
+    ALBUMS_TABLE:
+      Ref: albums
+    ALBUM_CONTENT_TABLE:
+      Ref: albumContent
+  apiGateway:
+    binaryMediaTypes:
+      - '*/*'
+
 
   iamRoleStatements:
     - Effect: Allow
@@ -42,24 +50,82 @@ provider:
 
     - Effect: Allow
       Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        "Fn::GetAtt": [ albumContent, Arn ]
+
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        "Fn::GetAtt": [ albums, Arn ]
+
+    - Effect: Allow
+      Action:
+        - s3:ListBucket
+      Resource:
+        "Fn::GetAtt": [ multimediaCloudStorage, Arn ]
+    - Effect: Allow
+      Action:
         - s3:GetObject
         - s3:PutObject
-        - s3:ListBucket
         - s3:DeleteObject
       Resource:
-        "Fn::GetAtt": [multimediaCloudStorage, Arn]
+        - "Fn::Join":
+            - ""
+            - - "Fn::GetAtt": [ multimediaCloudStorage, Arn ]
+              - "/*"
+
+    - Effect: 'Allow'
+      Action:
+        - 'SNS:CreateTopic'
+        - 'SNS:DeleteTopic'
+        - 'SNS:Subscribe'
+        - 'SNS:Unsubscribe'
+        - 'SNS:Publish'
+      Resource: '*'
 
 
 package:
   individually: true
+  patterns:
+    - '!**/**'
+    - 'internal/model/**'
 
 functions:
   uploadFile:
     handler: internal/multimedia/upload.upload_file
+    package:
+      include: 'internal/multimedia/upload.py'
     events:
       - http:
-          path: upload-file/:username
+          path: uploadFile/{username}
+          request:
+            parameters:
+              paths:
+                username: true
           method: post
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
           authorizer:
             name: MyAuthorizer
             type: COGNITO_USER_POOLS
@@ -70,6 +136,8 @@ functions:
                   Ref: CognitoUserPool
   helloWorld:
     handler: internal/user/hello_world.hello_world
+    package:
+      include: 'internal/user/**'
     events:
       - http:
           path: helloWorld
@@ -91,7 +159,351 @@ functions:
               - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
               - UserPoolId:
                   Ref: CognitoUserPool
-
+  getAllUserFiles:
+    handler: internal/multimedia/get_all_user_files.get_all_user_files
+    package:
+      include: 'internal/multimedia/get_all_user_files.py'
+    events:
+      - http:
+          path: getAllUserFiles/{username}
+          request:
+            parameters:
+              paths:
+                username: true
+          method: get
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  updateFile:
+    handler: internal/multimedia/update_file.update_file
+    package:
+      include: 'internal/multimedia/update_file.py'
+    events:
+      - http:
+          path: updateFile/{fileID}
+          request:
+            parameters:
+              paths:
+                fileID: true
+          method: put
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  deleteFile:
+    handler: internal/multimedia/delete_file.delete_file
+    package:
+      include: 'internal/multimedia/delete_file.py'
+    events:
+      - http:
+          path: delete_file/{fileID}
+          request:
+            parameters:
+              paths:
+                fileID: true
+          method: delete
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  createAlbum:
+    handler: internal/albums/create_album.create_album
+    package:
+      include: 'internal/albums/create_album.py'
+    events:
+      - http:
+          path: createAlbum/{email}
+          request:
+            parameters:
+              paths:
+                email: true
+          method: post
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  getAllUserAlbums:
+    handler: internal/albums/get_all_user_albums.get_all_user_albums
+    package:
+      include: 'internal/albums/get_all_user_albums.py'
+    events:
+      - http:
+          path: getAllUserAlbums/{email}
+          request:
+            parameters:
+              paths:
+                email: true
+          method: get
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  getSubAlbums:
+    handler: internal/albums/get_sub_albums.get_sub_albums
+    package:
+      include: 'internal/albums/get_sub_albums.py'
+    events:
+      - http:
+          path: getSubAlbums/{parentId}
+          request:
+            parameters:
+              paths:
+                parentId: true
+          method: get
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  deleteAlbum:
+    handler: internal/albums/delete_album.delete_album
+    package:
+      include: 'internal/albums/delete_album.py'
+    events:
+      - http:
+          path: deleteAlbum/{albumId}
+          request:
+            parameters:
+              paths:
+                albumId: true
+          method: delete
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  getAlbumContent:
+    handler: internal/albums/get_album_content.get_album_content
+    package:
+      include: 'internal/albums/get_album_content.py'
+    events:
+      - http:
+          path: getAlbumContent/{email}/{albumId}
+          request:
+            parameters:
+              paths:
+                email: true
+                albumId: true
+          method: get
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  removeContent:
+    handler: internal/albums/remove_content.remove_content
+    package:
+      include: 'internal/albums/remove_content.py'
+    events:
+      - http:
+          path: removeContent/{albumId}/{fileId}
+          request:
+            parameters:
+              paths:
+                albumId: true
+                fileId: true
+          method: delete
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  getAvailableAlbums:
+    handler: internal/albums/get_available_albums.get_available_albums
+    package:
+      include: 'internal/albums/get_available_albums.py'
+    events:
+      - http:
+          path: getAvailableAlbums/{email}/{fileId}
+          request:
+            parameters:
+              paths:
+                email: true
+                fileId: true
+          method: get
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  addToAlbum:
+    handler: internal/albums/add_to_album.add_to_album
+    package:
+      include: 'internal/albums/add_to_album.py'
+    events:
+      - http:
+          path: addToAlbum/{albumId}/{fileId}
+          request:
+            parameters:
+              paths:
+                albumId: true
+                fileId: true
+          method: get
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  createSnsTopicAndSubscribe:
+    handler: internal/notifications/create_topic_on_registration.create_topic_on_registration
+    package:
+      include: 'internal/notifications/create_topic_on_registration.py'
+    events:
+      - cognitoUserPool:
+          pool: my-user-pool
+          trigger: PreSignUp
+          existing: true
+  sendS3Notification:
+    handler: internal/notifications/notification_sender.send_notification
+    package:
+      include: 'internal/notifications/notification_sender.py'
+    events:
+      - s3:
+          bucket: multimedia-cloud-storage
+          event: s3:ObjectCreated:*
+          existing: true
+      - s3:
+          bucket: multimedia-cloud-storage
+          event: s3:ObjectRemoved:*
+          existing: true
 
 resources:
   Resources:
@@ -99,18 +511,16 @@ resources:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: multimedia_metadata
-        # Table Schema: attributes (name and type)
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
-        # Key Schema: which attribute is used as primary key (name and type)
         KeySchema:
           - AttributeName: id
             KeyType: HASH
-        # Additional configuration for simultaneous reads and writes
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+
     user:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -124,6 +534,34 @@ resources:
           - AttributeName: username
             KeyType: HASH
         # Additional configuration for simultaneous reads and writes
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+    albums:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: albums
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+    albumContent:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: album_content
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
@@ -191,3 +629,11 @@ resources:
         UserPoolId:
           Ref: CognitoUserPool
         Domain: cuki-kanjos-djoka
+
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    filename: requirements.txt

@@ -1,15 +1,14 @@
 import json
-from botocore.exceptions import ClientError
-import boto3
 
 
-def hello_world(event, context):
+def my_response(status_code, body):
     return {
-        'statusCode': 200,
-        'body': json.dumps({"message": "Hello world"}),
+        'statusCode': status_code,
+        'body': json.dumps(body),
         'headers': {
             "Access-Control-Allow-Origin": "http://localhost:4200",
             "Access-Control-Allow-Headers": "Authorization",
             "Access-Control-Allow-Credentials": True
         }
     }
+
