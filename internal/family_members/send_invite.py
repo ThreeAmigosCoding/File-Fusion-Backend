@@ -1,7 +1,16 @@
 import boto3
+from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 from internal.model.my_response import my_response
 import traceback
+
+client = boto3.client('cognito-idp')
+user_pool_id = 'eu-central-1_YIWsc8z0P'
+
+family_member_table_name = "family_member_invitation"
+
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table(family_member_table_name)
 
 
 def send_invite(event, context):
@@ -9,6 +18,8 @@ def send_invite(event, context):
 
     sender = event['pathParameters']['inviterEmail']
     recipient = event['pathParameters']['invitedEmail']
+    if not check_for_invitation(recipient):
+        return my_response(400, {"message": "Cannot invite, user already exists!"})
     subject = "File Fusion cloud platform invitation"
     body_text = f"{sender} invited you to join File Fusion cloud platform!"
     body_html = f"""<h2> {sender} invited you to join File fusion platform </h2> 
@@ -46,3 +57,25 @@ def send_invite(event, context):
         print("message", str(e))
         print("traceback", traceback.format_exc())
         return my_response(500, {"message": str(e), "tracebck": traceback.format_exc()})
+
+
+def check_for_invitation(recipient):
+    try:
+        client.admin_get_user(
+            UserPoolId=user_pool_id,
+            Username=recipient
+        )
+        return False
+    except ClientError:
+        pass
+
+    response = table.query(
+        KeyConditionExpression=Key('email').eq(recipient),
+        FilterExpression=Attr('status').ne('declined')
+    )
+    items = response['Items']
+    if len(items) > 0:
+        return False
+
+    return True
+
