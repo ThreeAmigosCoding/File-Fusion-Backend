@@ -44,9 +44,8 @@ def create_registration_request(event, context):
 
 
 def check_for_invitation(recipient):
-    response = table.query(
-        KeyConditionExpression=Key('email').eq(recipient),
-        FilterExpression=Attr('status').ne('declined')
+    response = table.scan(
+        FilterExpression=Attr('email').eq(recipient) & Attr('status').ne('declined')
     )
     items = response['Items']
     if len(items) > 0:
