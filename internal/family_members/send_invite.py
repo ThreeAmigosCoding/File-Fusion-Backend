@@ -23,7 +23,7 @@ def send_invite(event, context):
     subject = "File Fusion cloud platform invitation"
     body_text = f"{sender} invited you to join File Fusion cloud platform!"
     body_html = f"""<h2> {sender} invited you to join File fusion platform </h2> 
-                <br> <a href='http://localhost:4200/regiserAsMember/{sender}/{recipient}'>Join!</a> """
+                <br> <a href='http://localhost:4200/registerAsMember/{sender}/{recipient}'>Join!</a> """
     charset = "UTF-8"
 
     try:
