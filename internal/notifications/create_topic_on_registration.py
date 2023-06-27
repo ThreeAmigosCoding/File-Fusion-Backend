@@ -20,6 +20,17 @@ def create_topic_on_registration(event, context):
         Endpoint=email
     )
 
+    verify_ses_email(email)
+
     event['response']['autoConfirmUser'] = True
     event['response']['autoVerifyEmail'] = True
     return event
+
+
+def verify_ses_email(email):
+    ses_client = boto3.client('ses')  # Use your region
+    email_to_verify = email
+    response = ses_client.verify_email_identity(
+        EmailAddress=email_to_verify,
+    )
+    return
