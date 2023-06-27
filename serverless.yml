@@ -582,7 +582,7 @@ functions:
           request:
             parameters:
               paths:
-                email: true
+                ownerEmail: true
                 contentId: true
           method: get
           cors:
@@ -612,7 +612,7 @@ functions:
           request:
             parameters:
               paths:
-                email: true
+                ownerEmail: true
                 sharingEmail: true
                 contentId: true
           method: delete
