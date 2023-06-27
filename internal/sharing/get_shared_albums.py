@@ -5,8 +5,10 @@ from boto3.dynamodb.conditions import Attr
 from internal.model.my_response import my_response
 
 share_table_name = os.environ['SHARE_TABLE_NAME']
+albums_table_name = os.environ['ALBUMS_TABLE']
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table(share_table_name)
+albums_table = dynamodb.Table(albums_table_name)
 
 
 def get_shared_albums(event, context):
@@ -20,7 +22,7 @@ def get_shared_albums(event, context):
         albums = []
 
         for data in albums_data:
-            response = table.scan(
+            response = albums_table.scan(
                 FilterExpression=Attr('id').eq(data['contentId']) & Attr('deleted').eq(False)
             )
             if not response['Items']:

@@ -19,16 +19,17 @@ s3 = boto3.client('s3', config=Config(signature_version='s3v4'))
 def get_shared_files(event, context):
     try:
         email = event['pathParameters']['email']
-
+        print(email)
         response = table.scan(
             FilterExpression=Attr('viewer').eq(email) & Attr('contentType').eq('file')
         )
+        print(response)
         files_data = response['Items']
         files = []
 
         for data in files_data:
             response = multimedia_metadata_table.scan(
-                FilterExpression=Attr('id').eq(data['contentId']) & Attr('deleted').eq(False)
+                FilterExpression=Attr('id').eq(data['contentId']) & Attr('deleted').ne(True)
             )
             if not response['Items']:
                 continue
