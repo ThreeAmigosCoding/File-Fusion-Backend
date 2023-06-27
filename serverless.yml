@@ -510,9 +510,9 @@ functions:
 
   # Sharing
   getSharedAlbums:
-    handler: internal/albums/get_shared_albums.get_shared_albums
+    handler: internal/sharing/get_shared_albums.get_shared_albums
     package:
-      include: 'internal/albums/get_shared_albums.py'
+      include: 'internal/sharing/get_shared_albums.py'
     events:
       - http:
           path: getSharedAlbums/{email}
@@ -539,9 +539,9 @@ functions:
               - UserPoolId:
                   Ref: CognitoUserPool
   getSharedFiles:
-    handler: internal/albums/get_shared_files.get_shared_files
+    handler: internal/sharing/get_shared_files.get_shared_files
     package:
-      include: 'internal/albums/get_shared_files.py'
+      include: 'internal/sharing/get_shared_files.py'
     events:
       - http:
           path: getSharedFiles/{email}
@@ -568,9 +568,9 @@ functions:
               - UserPoolId:
                   Ref: CognitoUserPool
   getSharedUsers:
-    handler: internal/albums/get_shared_users.get_shared_users
+    handler: internal/sharing/get_shared_users.get_shared_users
     package:
-      include: 'internal/albums/get_shared_users.py'
+      include: 'internal/sharing/get_shared_users.py'
     events:
       - http:
           path: getSharedUsers/{ownerEmail}/{contentId}
@@ -598,9 +598,9 @@ functions:
               - UserPoolId:
                   Ref: CognitoUserPool
   removeSharePermissions:
-    handler: internal/albums/remove_share_permission.remove_share_permission
+    handler: internal/sharing/remove_share_permission.remove_share_permission
     package:
-      include: 'internal/albums/remove_share_permission.py'
+      include: 'internal/sharing/remove_share_permission.py'
     events:
       - http:
           path: removeSharePermissions/{ownerEmail}/{sharingEmail}/{contentId}
@@ -629,19 +629,13 @@ functions:
               - UserPoolId:
                   Ref: CognitoUserPool
   shareWithUser:
-    handler: internal/albums/share_with_user.share_with_user
+    handler: internal/sharing/share_with_user.share_with_user
     package:
-      include: 'internal/albums/share_with_user.py'
+      include: 'internal/sharing/share_with_user.py'
     events:
       - http:
-          path: shareWithUser/{ownerEmail}/{sharingEmail}/{contentId}
-          request:
-            parameters:
-              paths:
-                email: true
-                sharingEmail: true
-                contentId: true
-          method: get
+          path: shareWithUser
+          method: post
           cors:
             origin: 'http://localhost:4200'
             headers:
