@@ -37,7 +37,7 @@ def get_shared_files(event, context):
             print("file:", file)
             data_url = s3.generate_presigned_url('get_object',
                                                  Params={'Bucket': multimedia_bucket_name,
-                                                         'Key': email + "/" + file['name']},
+                                                         'Key': data['owner'] + "/" + file['name']},
                                                  ExpiresIn=86400)
 
             file_display = MultimediaDisplay(
