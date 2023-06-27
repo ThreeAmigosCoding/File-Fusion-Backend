@@ -57,17 +57,33 @@ def upload_file(event, context):
 
         # Write the metadata to the DynamoDB table
         table.put_item(Item=multimedia.to_dict())
+        album_content_id = ""
 
         if album_id != "":
-            add_to_album(multimedia_id, album_id)
+            try:
+                album_content_id = str(uuid.uuid4())
+                album_content_table.put_item(Item={
+                    "id": album_content_id,
+                    "album": album_id,
+                    "file": multimedia_id
+                })
+            except Exception as e:
+                multimetia_metadata_rollback(multimedia_id)
+                return my_response(500, {"message": str(e)})
 
-        # Upload the file to the S3 bucket
-        s3 = boto3.client('s3')
-        s3.put_object(
-            Body=file_content,
-            Bucket='multimedia-cloud-storage',  # replace with your bucket name
-            Key=f'{username}/{file_name}'
-        )
+        try:
+            # Upload the file to the S3 bucket
+            s3 = boto3.client('s3')
+            s3.put_object(
+                Body=file_content,
+                Bucket='multimedia-cloud-storage',  # replace with your bucket name
+                Key=f'{username}/{file_name}'
+            )
+        except Exception as e:
+            multimetia_metadata_rollback(multimedia_id)
+            if album_id != '':
+                album_content_rollback(album_content_id)
+            return my_response(500, {"message": str(e)})
 
         return my_response(200, {"message": "File uploaded successfully"})
     except Exception as e:
@@ -76,9 +92,17 @@ def upload_file(event, context):
         return my_response(500, {"message": str(e), "tracebck": traceback.format_exc()})
 
 
-def add_to_album(multimedia_id, album_id):
-    album_content_table.put_item(Item={
-        "id": str(uuid.uuid4()),
-        "album": album_id,
-        "file": multimedia_id
-    })
+def multimetia_metadata_rollback(multimedia_id):
+    table.delete_item(
+        Key={
+            'id': multimedia_id
+        }
+    )
+
+
+def album_content_rollback(album_content_id):
+    album_content_table.delete_item(
+        Key={
+            'id': album_content_id['id']
+        }
+    )

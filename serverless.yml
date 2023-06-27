@@ -20,6 +20,8 @@ provider:
       Ref: albumContent
     SHARE_TABLE_NAME:
       Ref: share
+    FAMILY_MEMBER_INVITATION_TABLE:
+      Ref: familyMemberInvitation
   apiGateway:
     binaryMediaTypes:
       - '*/*'
@@ -37,6 +39,18 @@ provider:
         - dynamodb:DeleteItem
       Resource:
         "Fn::GetAtt": [user, Arn]
+
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        "Fn::GetAtt": [ familyMemberInvitation, Arn ]
 
     - Effect: Allow
       Action:
@@ -736,14 +750,6 @@ functions:
               - X-Api-Key
               - X-Amz-Security-Token
               - X-Amz-User-Agent
-          authorizer:
-            name: MyAuthorizer
-            type: COGNITO_USER_POOLS
-            arn:
-              !Sub
-              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
-              - UserPoolId:
-                  Ref: CognitoUserPool
   manageRegistrationRequest:
     handler: internal/family_members/manage_registration_request.manage_registration_request
     package:
