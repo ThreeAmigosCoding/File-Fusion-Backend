@@ -36,7 +36,7 @@ def manage_registration_request(event, context):
 
 
 def update_invitation_status(request_id, status):
-    update_expression = 'SET status = :val1'
+    update_expression = 'SET invitation_status = :val1'
     expression_attribute_values = {':val1': status}
     table.update_item(
         Key={"id": request_id},

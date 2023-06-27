@@ -1,3 +1,4 @@
+import base64
 import json
 import traceback
 import uuid
@@ -10,27 +11,29 @@ from boto3.dynamodb.conditions import Attr, Key
 from internal.model.multimedia_metadata import MultimediaDisplay
 import os
 
-multimedia_metadata_table_name = "family_member_invitation"
+family_member_table_name = "family_member_invitation"
 multimedia_bucket_name = os.environ['MULTIMEDIA_BUCKET']
 
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(multimedia_metadata_table_name)
+table = dynamodb.Table(family_member_table_name)
 cognito_client = boto3.client("cognito-idp")
 
 
 def create_registration_request(event, context):
     try:
         inviter_email = event['pathParameters']['inviterEmail']
+        event['body'] = base64.b64decode(event['body'])
+        body = json.loads(event['body'])
 
-        if not check_for_invitation(event['body']['email']):
+        if not check_for_invitation(body['email']):
             return my_response(400, {"message": "You are already in the system!"})
 
-        table_item = {'email': event['body']['email'],
-                      'password': event['body']['password'],
-                      'name': event['body']['name'],
-                      'family_name': event['body']['family_name'],
-                      'address': event['body']['address'],
-                      'status': "pending",
+        table_item = {'email': body['email'],
+                      'password': body['password'],
+                      'name': body['name'],
+                      'family_name': body['family_name'],
+                      'address': body['address'],
+                      'invitation_status': "pending",
                       'id': str(uuid.uuid4()),
                       'inviter_email': inviter_email}
 
@@ -45,7 +48,7 @@ def create_registration_request(event, context):
 
 def check_for_invitation(recipient):
     response = table.scan(
-        FilterExpression=Attr('email').eq(recipient) & Attr('status').ne('declined')
+        FilterExpression=Attr('email').eq(recipient) & Attr('invitation_status').ne('declined')
     )
     items = response['Items']
     if len(items) > 0:

@@ -70,7 +70,7 @@ def check_for_invitation(recipient):
         pass
 
     response = table.scan(
-        FilterExpression=Attr('email').eq(recipient) & Attr('status').ne('declined')
+        FilterExpression=Attr('email').eq(recipient) & Attr('invitation_status').ne('declined')
     )
     items = response['Items']
     if len(items) > 0:

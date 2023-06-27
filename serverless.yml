@@ -774,6 +774,36 @@ functions:
               - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
               - UserPoolId:
                   Ref: CognitoUserPool
+  getMembersByStatus:
+    handler: internal/family_members/get_members_by_status.get_members_by_status
+    package:
+      include: 'internal/family_members/get_members_by_status.py'
+    events:
+      - http:
+          path: getMembersByStatus/{inviterEmail}/{invitationStatus}
+          request:
+            parameters:
+              paths:
+                inviterEmail: true
+                invitationStatus: true
+          method: get
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
 
 
 resources:
