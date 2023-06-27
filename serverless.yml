@@ -118,6 +118,11 @@ provider:
       Resource:
         - "Fn::GetAtt": [ CognitoUserPool, Arn ]
 
+    - Effect: 'Allow'
+      Action:
+        - 'ses:*'
+      Resource: '*'
+
 
 package:
   individually: true
