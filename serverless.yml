@@ -504,6 +504,97 @@ functions:
           bucket: multimedia-cloud-storage
           event: s3:ObjectRemoved:*
           existing: true
+  sendInvite:
+    handler: internal/family_members/send_invite.send_invite
+    package:
+      include: 'internal/family_members/send_invite.py'
+    events:
+      - http:
+          path: sendInvite/{inviterEmail}/{invitedEmail}
+          request:
+            parameters:
+              paths:
+                inviterEmail: true
+                invitedEmail: true
+          method: get
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  createRegistrationRequest:
+    handler: internal/family_members/create_registration_request.create_registration_request
+    package:
+      include: 'internal/family_members/create_registration_request.py'
+    events:
+      - http:
+          path: createRegistrationRequest/{inviterEmail}/{invitedEmail}
+          request:
+            parameters:
+              paths:
+                inviterEmail: true
+                invitedEmail: true
+          method: post
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  manageRegistrationRequest:
+    handler: internal/family_members/manage_registration_request.manage_registration_request
+    package:
+      include: 'internal/family_members/manage_registration_request.py'
+    events:
+      - http:
+          path: manageRegistrationRequest/{requestId}/{approved}
+          request:
+            parameters:
+              paths:
+                requestId: true
+                approved: true
+          method: post
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+
 
 resources:
   Resources:
@@ -566,6 +657,20 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
 
+    familyMemberInvitation:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: family_member_invitation
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
     multimediaCloudStorage:
       Type: AWS::S3::Bucket
       Properties:
@@ -576,8 +681,6 @@ resources:
       Properties:
         UserPoolName: my-user-pool
         UsernameAttributes:
-          - email
-        AutoVerifiedAttributes:
           - email
         Schema:
           - Name: name

@@ -19,4 +19,7 @@ def create_topic_on_registration(event, context):
         Protocol='email',
         Endpoint=email
     )
+
+    event['response']['autoConfirmUser'] = True
+    event['response']['autoVerifyEmail'] = True
     return event
