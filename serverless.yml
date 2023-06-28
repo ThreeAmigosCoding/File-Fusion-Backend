@@ -18,6 +18,10 @@ provider:
       Ref: albums
     ALBUM_CONTENT_TABLE:
       Ref: albumContent
+    SHARE_TABLE_NAME:
+      Ref: share
+    FAMILY_MEMBER_INVITATION_TABLE:
+      Ref: familyMemberInvitation
   apiGateway:
     binaryMediaTypes:
       - '*/*'
@@ -35,6 +39,30 @@ provider:
         - dynamodb:DeleteItem
       Resource:
         "Fn::GetAtt": [user, Arn]
+
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        "Fn::GetAtt": [ familyMemberInvitation, Arn ]
+
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        "Fn::GetAtt": [ share, Arn ]
 
     - Effect: Allow
       Action:
@@ -77,6 +105,7 @@ provider:
         - s3:ListBucket
       Resource:
         "Fn::GetAtt": [ multimediaCloudStorage, Arn ]
+
     - Effect: Allow
       Action:
         - s3:GetObject
@@ -97,6 +126,17 @@ provider:
         - 'SNS:Publish'
       Resource: '*'
 
+    - Effect: 'Allow'
+      Action:
+        - 'cognito-idp:*'
+      Resource:
+        - "Fn::GetAtt": [ CognitoUserPool, Arn ]
+
+    - Effect: 'Allow'
+      Action:
+        - 'ses:*'
+      Resource: '*'
+
 
 package:
   individually: true
@@ -105,6 +145,8 @@ package:
     - 'internal/model/**'
 
 functions:
+
+  # Multimedia
   uploadFile:
     handler: internal/multimedia/upload.upload_file
     package:
@@ -246,6 +288,8 @@ functions:
               - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
               - UserPoolId:
                   Ref: CognitoUserPool
+
+  # Albums
   createAlbum:
     handler: internal/albums/create_album.create_album
     package:
@@ -482,6 +526,154 @@ functions:
               - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
               - UserPoolId:
                   Ref: CognitoUserPool
+
+  # Sharing
+  getSharedAlbums:
+    handler: internal/sharing/get_shared_albums.get_shared_albums
+    package:
+      include: 'internal/sharing/get_shared_albums.py'
+    events:
+      - http:
+          path: getSharedAlbums/{email}
+          request:
+            parameters:
+              paths:
+                email: true
+          method: get
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  getSharedFiles:
+    handler: internal/sharing/get_shared_files.get_shared_files
+    package:
+      include: 'internal/sharing/get_shared_files.py'
+    events:
+      - http:
+          path: getSharedFiles/{email}
+          request:
+            parameters:
+              paths:
+                email: true
+          method: get
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  getSharedUsers:
+    handler: internal/sharing/get_shared_users.get_shared_users
+    package:
+      include: 'internal/sharing/get_shared_users.py'
+    events:
+      - http:
+          path: getSharedUsers/{ownerEmail}/{contentId}
+          request:
+            parameters:
+              paths:
+                ownerEmail: true
+                contentId: true
+          method: get
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  removeSharePermissions:
+    handler: internal/sharing/remove_share_permission.remove_share_permission
+    package:
+      include: 'internal/sharing/remove_share_permission.py'
+    events:
+      - http:
+          path: removeSharePermissions/{ownerEmail}/{sharingEmail}/{contentId}
+          request:
+            parameters:
+              paths:
+                ownerEmail: true
+                sharingEmail: true
+                contentId: true
+          method: delete
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  shareWithUser:
+    handler: internal/sharing/share_with_user.share_with_user
+    package:
+      include: 'internal/sharing/share_with_user.py'
+    events:
+      - http:
+          path: shareWithUser
+          method: post
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+
+  # Notifications
   createSnsTopicAndSubscribe:
     handler: internal/notifications/create_topic_on_registration.create_topic_on_registration
     package:
@@ -504,6 +696,121 @@ functions:
           bucket: multimedia-cloud-storage
           event: s3:ObjectRemoved:*
           existing: true
+
+  # Family members
+  sendInvite:
+    handler: internal/family_members/send_invite.send_invite
+    package:
+      include: 'internal/family_members/send_invite.py'
+    events:
+      - http:
+          path: sendInvite/{inviterEmail}/{invitedEmail}
+          request:
+            parameters:
+              paths:
+                inviterEmail: true
+                invitedEmail: true
+          method: get
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  createRegistrationRequest:
+    handler: internal/family_members/create_registration_request.create_registration_request
+    package:
+      include: 'internal/family_members/create_registration_request.py'
+    events:
+      - http:
+          path: createRegistrationRequest/{inviterEmail}/{invitedEmail}
+          request:
+            parameters:
+              paths:
+                inviterEmail: true
+                invitedEmail: true
+          method: post
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+  manageRegistrationRequest:
+    handler: internal/family_members/manage_registration_request.manage_registration_request
+    package:
+      include: 'internal/family_members/manage_registration_request.py'
+    events:
+      - http:
+          path: manageRegistrationRequest/{requestId}/{approved}
+          request:
+            parameters:
+              paths:
+                requestId: true
+                approved: true
+          method: post
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+  getMembersByStatus:
+    handler: internal/family_members/get_members_by_status.get_members_by_status
+    package:
+      include: 'internal/family_members/get_members_by_status.py'
+    events:
+      - http:
+          path: getMembersByStatus/{inviterEmail}/{invitationStatus}
+          request:
+            parameters:
+              paths:
+                inviterEmail: true
+                invitationStatus: true
+          method: get
+          cors:
+            origin: 'http://localhost:4200'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              !Sub
+              - arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}
+              - UserPoolId:
+                  Ref: CognitoUserPool
+
 
 resources:
   Resources:
@@ -566,6 +873,34 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
 
+    familyMemberInvitation:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: family_member_invitation
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+    share:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: share
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
     multimediaCloudStorage:
       Type: AWS::S3::Bucket
       Properties:
@@ -576,8 +911,6 @@ resources:
       Properties:
         UserPoolName: my-user-pool
         UsernameAttributes:
-          - email
-        AutoVerifiedAttributes:
           - email
         Schema:
           - Name: name
